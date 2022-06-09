@@ -58,6 +58,44 @@
         $path = isset($_GET["path"]) ? './' . $_GET["path"] : './';
         $docs = scandir($path);
 
+        // DOWNLOAD FILE Conditional Statement
+        //------------------------------------------
+        if (isset($_POST['download'])) {
+            $file = './' . $_GET['path'] . "/" . $_POST['download'];
+            $fileToDownloadEscaped = str_replace("&nbsp;", " ", htmlentities($file, 0, 'utf-8'));
+
+            ob_clean();
+            ob_start();
+            header('Content-Description: File Transfer');
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename=' . basename($fileToDownloadEscaped));
+            header('Content-Transfer-Encoding: binary');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+            header('Pragma: public');
+            header('Content-Length: ' . filesize($fileToDownloadEscaped));
+            ob_end_flush();
+            readfile($fileToDownloadEscaped);
+            exit;
+        }
+
+        // DELETE FILE Conditional Statement
+        //------------------------------------------   
+        $deleteSuccess = "";
+        $deleteError = '';
+        if (isset($_POST['delete']) && $_POST['delete'] !== 'index.php' && $_POST['delete'] !== 'README.md') {
+            $file = './' . isset($_GET['path']) . $_POST['delete'];
+            if (is_file($file)) {
+                if (file_exists($file)) {
+                    unlink($file);
+                    header("refresh: 1");
+                    $deleteSuccess = 'File Deleted Successfuly!';
+                }
+            }
+        }
+        if (isset($_POST['delete']) && ($_POST['delete'] === 'index.php' || $_POST['delete'] === 'README.md')) {
+            $deleteError = 'This file can not be deleted!';
+        }
 
         // GO BACK Conditional Statement
         //------------------------------------------   
@@ -83,6 +121,8 @@
             <i class="fa-solid fa-right-from-bracket"></i> 
             Logout</a>
             </button>');
+        print('<p style=" color: #eb5b34;">' . $deleteError . '</p>');
+        print('<p style=" color:#eb5b34;">' . $deleteSuccess . '</p>');
         print("</div>");
         print("</div>");
 
@@ -106,6 +146,35 @@
                     : $value)
                     . '</td>');
                 print('<td style="border: 1px solid black;">' . (is_dir($path . $value) ? "Folder" : "File") . '</td>');
+                
+                // DELETE and DOWNLOAD BUTTONS do not appear for folders
+                //-----------------------------------------      
+                if (is_dir($path . $value)) {
+                    print('<td style="border: 1px solid black;"></td>');
+                    print('<td style="border: 1px solid black;"></td>');
+                } else if (is_file($path . $value)) {
+
+                    // DELETE BUTTON
+                    //-----------------------------------------      
+                    print('<td style="border: 1px solid black;">' .
+                        '<form style= "display: flex; justify-content: center" action="" method="post">
+                            <button class="delete btn btn-xs" type ="submit" name="delete" value =' . $value . ' style="color: white; background: #eb5b34;">
+                            <i class="fa-regular fa-trash-can"></i> 
+                            Delete</button>
+                            </form>
+                    </td>');
+
+                    // DOWNLOAD FILE BUTTON
+                    //------------------------------------------   
+                    print('<td style="border: 1px solid black;">');
+                    print('<form style= "display: flex; justify-content: center" action="" method="POST">');
+                    print('<button type="submit" name="download" value="' . $value . '" class="btn" style=" color: white; background: #2884bd;">
+                        <i class="fa-solid fa-download"></i> 
+                        Download</button>');
+                    print('</form>');
+                    print('</td>');
+                    print("</tr>");
+                }
             }
         }
         print('</table>');
