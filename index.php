@@ -58,6 +58,46 @@
         $path = isset($_GET["path"]) ? './' . $_GET["path"] : './';
         $docs = scandir($path);
 
+        // CREATE NEW FOLDER Conditional Statement
+        //------------------------------------------
+        $success = "";
+        $errors = "";
+        if (isset($_POST['createfolder'])) {
+            $folder_name = $_POST['createfolder'];
+            if (isset($_GET['path'])) {
+                $path_n = $_GET['path'];
+                $path = './' . $path_n;
+            }
+            if (!file_exists($path . $folder_name)) {
+                @mkdir($path . $folder_name, 0777, true);
+                header("refresh: 1");
+            } else if (isset($_POST['createfolder']) && file_exists("./" . $_POST['createfolder'])) {
+                $errors = 'Folder "' . $_POST['createfolder'] . '" already exists';
+            }
+        }
+
+        // UPLOAD FILE Conditional Statement
+        //------------------------------------------
+        if (isset($_FILES['image'])) {
+            $file_name = $_FILES['image']['name'];
+            $file_size = $_FILES['image']['size'];
+            $file_tmp = $_FILES['image']['tmp_name'];
+            $file_type = $_FILES['image']['type'];
+            $file_ext_n = (explode('.', $_FILES['image']['name']));
+            $file_ext = strtolower(end($file_ext_n));
+            $extensions = array("jpeg", "jpg", "png");
+            if (in_array($file_ext, $extensions) === false) {
+                $errors = "Extension not allowed, please choose a JPEG or PNG file.";
+            }
+            if ($file_size > 2097152) {
+                $errors = 'File size must be excately 2 MB';
+            }
+            if (empty($errors) == true) {
+                move_uploaded_file($file_tmp, "./" . $path . $file_name);
+                header("refresh: 1");
+            }
+        }
+
         // DOWNLOAD FILE Conditional Statement
         //------------------------------------------
         if (isset($_POST['download'])) {
@@ -146,7 +186,7 @@
                     : $value)
                     . '</td>');
                 print('<td style="border: 1px solid black;">' . (is_dir($path . $value) ? "Folder" : "File") . '</td>');
-                
+
                 // DELETE and DOWNLOAD BUTTONS do not appear for folders
                 //-----------------------------------------      
                 if (is_dir($path . $value)) {
@@ -178,6 +218,29 @@
             }
         }
         print('</table>');
+
+        // DISPLAY MESSAGES/WARNINGS
+        //------------------------------------------   
+        print('<p style=" color: #eb5b34; margin-left:10px; margin-top: 30px;">' . $errors . '</p>');
+        print('<p style=" color: #eb5b34; margin-left:10px;">' . $success . '</p>');
+
+        // CREATE FOLDER FORM 
+        //------------------------------------------   
+        print('<form action="" method="POST" style="margin-left:10px;">
+        <input name="createfolder" type="text" class="p-2 mb-4 mt-3 w-50 rounded" placeholder="Folder name" style="border: 2px solid gray">
+        <button type="submit" class="btn" style="background: #44a665; color: white;">
+        <i class="fa-solid fa-folder-plus"></i> 
+        Create Folder</button>
+        </form>');
+
+        // UPLOAD FILE FORM
+        //------------------------------------------   
+        print('<form class="mb-4" action="" method="POST" enctype="multipart/form-data" style="margin-left:10px;">
+        <input type = "file" name = "image" class="btn w-50" style="border: 2px solid gray"/>
+        <button type = "submit" class="btn" style="background: #44a665; color: white;"/>
+        <i class="fa-solid fa-upload"></i> 
+        Upload file</button>
+        </form>');
     }
     ?>
     <script>
